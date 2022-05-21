@@ -10,16 +10,6 @@
 
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-
-const int E1_PIN = 3;
-const int E2_PIN = 5;
-const int E3_PIN = 6;
-
-
-int lastFloor = 1;
-int calledFloor;
-int goTime;
-
 // 'up', 13x64px
 const unsigned char ArrowUpup [] PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x07, 0x00, 0x0f, 0x80, 0x1d, 0xc0, 0x38, 0xe0, 0x70, 0x70, 
@@ -466,6 +456,18 @@ const unsigned char* ArrowDownallArray[18] = {
 };
 
 
+const int E1_PIN = 3;
+const int E2_PIN = 5;
+const int E3_PIN = 6;
+
+
+int lastFloor = 0;
+int calledFloor;
+int goTime;
+
+
+
+
 
 void setup() {
   pinMode(E1_PIN, INPUT_PULLUP);
@@ -548,7 +550,10 @@ int arrived(){
   oledDisplayCenter("I'm here!");
   currentFloorStatus();  
   digitalWrite(11,HIGH);
-  delay(200);
+  delay(1000);
+  display.clearDisplay();
+  display.display();
+  currentFloorStatus();  
   
   return -1;
 }
@@ -561,15 +566,17 @@ void anim(){
   int setting = calledFloor-lastFloor; //do it go up or down ? (negative -> down)
   uint16_t width;
   uint16_t height;
-  const int time = 100;
-  const int speed = 10;
+  const int speed = 40;  //speed at which the arrows are moving
   int frame = 0;
 
+  int timeDif = millis();
+  int notch = 0;
+
   if(setting == 2 || setting== -2)   //goTime change
-    goTime=4000;
+    goTime=1000;
 
   else 
-    goTime=2000;
+    goTime=500;
   
   display.setTextSize(2);
 
@@ -577,28 +584,43 @@ void anim(){
   display.display();
 
   offset = 0;
+  notch = 0;
   
   if(setting > 0){
-    for(int i=0;i<(time-1);i++){
+    
+    Serial.println(goTime + " " + millis()-timeDif);
+    delay(2000);
+    
+    while(goTime>millis()-timeDif){
+      if(millis()-timeDif < notch)
+        delay(notch-(millis()-timeDif));
+        
       if(frame==(ArrowUpallArray_LEN ))
         frame = 0;
+          
       display.drawBitmap((SCREEN_WIDTH - width)/2,0,ArrowUpallArray[frame],13,64,SH110X_WHITE);
       display.display();
       delay(speed);
       display.clearDisplay();
       frame++;
+      notch += speed;
     }
   }
 
   else if(setting < 0){
-    for(int i=0;i<(time-1);i++){
+    while(goTime>millis()-timeDif){
+      if(millis()-timeDif < notch)
+        delay(notch-(millis()-timeDif));
+        
       if(frame==(ArrowDownallArray_LEN ))
         frame = 0;
+        
       display.drawBitmap((SCREEN_WIDTH - width)/2,0,ArrowDownallArray[frame],13,64,SH110X_WHITE);
       display.display();
       delay(speed);
       display.clearDisplay();
       frame++;
+      notch += speed;
     }
   }
   
