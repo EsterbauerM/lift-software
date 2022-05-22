@@ -240,12 +240,15 @@ const unsigned char* ArrowDownallArray[9] = {
   ArrowDownup16
 };
 
-
 //=========================================================================================================================
 
-const int E1_PIN = 3;
-const int E2_PIN = 5;
-const int E3_PIN = 6;
+const int E1_PIN = 2;
+const int E2_PIN = 3;
+const int E3_PIN = 4;
+
+const int S1_PIN = 5;
+const int S2_PIN = 6;
+const int S3_PIN = 7;
 
 const int LED_MOVE = 12;
 const int LED_ARRIVED = 11;
@@ -254,30 +257,26 @@ int lastFloor = 0;
 int calledFloor;
 int goTime;
 
-
-
-
-
 void setup() {
-  pinMode(E1_PIN, INPUT_PULLUP);
+  pinMode(E1_PIN, INPUT_PULLUP);    //Etage Pins
   pinMode(E2_PIN, INPUT_PULLUP);
   pinMode(E3_PIN, INPUT_PULLUP);
+
+  pinMode(S1_PIN, INPUT_PULLUP);    //Stop pins
+  pinMode(S2_PIN, INPUT_PULLUP);
+  pinMode(S3_PIN, INPUT_PULLUP);
 
   pinMode(LED_ARRIVED,OUTPUT);
   pinMode(LED_MOVE,OUTPUT);
 
   Serial.begin(9600);
 
-  delay(250);
   display.begin(i2c_Address, true);
-  display.display();
-  delay(2000);
-
   display.clearDisplay();
 
   display.setTextSize(2);
   display.setTextColor(SH110X_WHITE);
-  oledDisplayCenter("Welcome!");
+  oledDisplayCenter("Booting...");
   delay(3000);
   display.clearDisplay();
   display.display();
@@ -326,7 +325,6 @@ void onMyWay(){
   display.clearDisplay();
   digitalWrite(LED_MOVE,HIGH);
   anim();
-
   digitalWrite(LED_MOVE,LOW);
   display.clearDisplay();
   display.display();
@@ -349,33 +347,30 @@ void anim(){
   int setting = calledFloor-lastFloor; //do it go up or down ? (negative -> down)
   uint16_t width;
   uint16_t height;
-  const int speed = 10;  //speed at which the arrows are moving
+  const int speed = 30;  //speed at which the arrows are moving
   int frame = 0;
+  int etage;
 
-  
-  int notch = 0;
-
-  if(setting == 2 || setting== -2)   //goTime change
-    goTime=1000;
-
-  else 
-    goTime=500;
-  
   display.setTextSize(2);
 
   display.clearDisplay();
   display.display();
 
   offset = 0;
-  notch = 0;
+  
+  switch(calledFloor){
+    case 0: etage = S1_PIN;
+    break;
+    case 1: etage = S2_PIN;
+    break;
+    case 2: etage = S3_PIN;
+    break;
+  }
+ 
   
   if(setting > 0){
-    
-    
-    long timeDif = millis();
-    while(goTime>millis()-timeDif){
-      if(millis()-timeDif < notch)
-        delay(notch-(millis()-timeDif));
+    while(digitalRead(etage)){ 
+      delay(speed);
         
       if(frame==(ArrowUpallArray_LEN ))
         frame = 0;
@@ -384,17 +379,12 @@ void anim(){
       display.display();
       display.clearDisplay();
       frame++;
-      notch += speed;
     }
   }
 
   else if(setting < 0){
-
-    long timeDif = millis();
-    
-    while(goTime>millis()-timeDif){
-      if(millis()-timeDif < notch)
-        delay(notch-(millis()-timeDif));
+    while(digitalRead(etage)){
+      delay(speed);
         
       if(frame==(ArrowDownallArray_LEN ))
         frame = 0;
@@ -403,7 +393,6 @@ void anim(){
       display.display();
       display.clearDisplay();
       frame++;
-      notch += speed;
     }
   }
   
