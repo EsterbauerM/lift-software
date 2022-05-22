@@ -247,6 +247,9 @@ const int E1_PIN = 3;
 const int E2_PIN = 5;
 const int E3_PIN = 6;
 
+const int LED_MOVE = 12;
+const int LED_ARRIVED = 11;
+
 int lastFloor = 0;
 int calledFloor;
 int goTime;
@@ -260,8 +263,8 @@ void setup() {
   pinMode(E2_PIN, INPUT_PULLUP);
   pinMode(E3_PIN, INPUT_PULLUP);
 
-  pinMode(11,OUTPUT);
-  pinMode(12,OUTPUT);
+  pinMode(LED_ARRIVED,OUTPUT);
+  pinMode(LED_MOVE,OUTPUT);
 
   Serial.begin(9600);
 
@@ -281,6 +284,7 @@ void setup() {
   
   display.setTextSize(1);
   currentFloorStatus(); 
+  digitalWrite(LED_ARRIVED,HIGH);
   
 }
 
@@ -288,7 +292,6 @@ void setup() {
 
 void loop() {
   int floorState = -1;
-  String callouts;
 
   while(floorState!=calledFloor){
     if(!digitalRead(E1_PIN)){
@@ -311,7 +314,7 @@ void loop() {
   }
   if(calledFloor == lastFloor){
     lastFloor = calledFloor;
-    floorState = arrived();
+    floorState = -1;
   }
 }
 
@@ -319,29 +322,23 @@ void loop() {
 
 void onMyWay(){
   
-  digitalWrite(11,LOW);
+  digitalWrite(LED_ARRIVED,LOW);
   display.clearDisplay();
-  digitalWrite(12,HIGH);
+  digitalWrite(LED_MOVE,HIGH);
   anim();
 
-  digitalWrite(12,LOW);
+  digitalWrite(LED_MOVE,LOW);
   display.clearDisplay();
   display.display();
+  arrived();
 }
 
 //------------------------------------------------------------------------------
 
-int arrived(){
+void arrived(){
   display.clearDisplay();
-  oledDisplayCenter("I'm here!");
   currentFloorStatus();  
-  digitalWrite(11,HIGH);
-  delay(1000);
-  display.clearDisplay();
-  display.display();
-  currentFloorStatus();  
-  
-  return -1;
+  digitalWrite(LED_ARRIVED,HIGH);
 }
 
 //------------------------------------------------------------------------------
@@ -418,16 +415,14 @@ void anim(){
 
 void currentFloorStatus(){
 
-  display.setCursor(2,2);
-  switch(lastFloor){
-    case 0:display.println("EG");
+  switch(calledFloor){
+    case 0:oledDisplayCenter("EG");
     break;
-    case 1:display.println("1. Stock");
+    case 1:oledDisplayCenter("1. Stock");
     break;
-    case 2:display.println("2. Stock");
+    case 2:oledDisplayCenter("2. Stock");
     break;
   }
-  display.display();
 }
 
 //------------------------------------------------------------------------------
