@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
+#include <Stepper.h>
 
 #define SCREEN_WIDTH 128 // OLED display width,  in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -250,8 +251,13 @@ const int S1_PIN = 5;
 const int S2_PIN = 6;
 const int S3_PIN = 7;
 
-const int LED_MOVE = 12;
-const int LED_ARRIVED = 11;
+const int LED_MOVE = 15;
+const int LED_ARRIVED = 14;
+
+const int motorSpeed = 60;  //wie viele upm 
+const int stepsPerRev = 200; //Schritte pro etage
+
+Stepper myStepper(stepsPerRev, 9, 10, 11, 12);
 
 int lastFloor = 0;
 int calledFloor;
@@ -268,6 +274,8 @@ void setup() {
 
   pinMode(LED_ARRIVED,OUTPUT);
   pinMode(LED_MOVE,OUTPUT);
+
+  myStepper.setSpeed(motorSpeed);
 
   Serial.begin(9600);
 
@@ -325,6 +333,7 @@ void onMyWay(){
   display.clearDisplay();
   digitalWrite(LED_MOVE,HIGH);
   anim();
+  display.setTextSize(1);
   digitalWrite(LED_MOVE,LOW);
   display.clearDisplay();
   display.display();
@@ -347,9 +356,10 @@ void anim(){
   int setting = calledFloor-lastFloor; //do it go up or down ? (negative -> down)
   uint16_t width;
   uint16_t height;
-  const int speed = 30;  //speed at which the arrows are moving
-  int frame = 0;
+  int steps = 1;
   int etage;
+
+  const int RotationsToMid = 10;
 
   display.setTextSize(2);
 
@@ -367,37 +377,35 @@ void anim(){
     break;
   }
  
-  
   if(setting > 0){
+    
+    display.drawBitmap((SCREEN_WIDTH - width)/2,0,ArrowUpallArray[0],13,64,SH110X_WHITE);
+    display.display();
+  
+    if(etage == S2_PIN){
+      myStepper.step(RotationsToMid * stepsPerRev);
+      return;
+    }
+    
     while(digitalRead(etage)){ 
-      delay(speed);
-        
-      if(frame==(ArrowUpallArray_LEN ))
-        frame = 0;
-          
-      display.drawBitmap((SCREEN_WIDTH - width)/2,0,ArrowUpallArray[frame],13,64,SH110X_WHITE);
-      display.display();
-      display.clearDisplay();
-      frame++;
+      myStepper.step(steps);
     }
   }
 
   else if(setting < 0){
+    
+    display.drawBitmap((SCREEN_WIDTH - width)/2,0,ArrowDownallArray[0],13,64,SH110X_WHITE);
+    display.display();
+
+    if(etage == S2_PIN){
+      myStepper.step(-(RotationsToMid * stepsPerRev));
+      return;
+    }
+    
     while(digitalRead(etage)){
-      delay(speed);
-        
-      if(frame==(ArrowDownallArray_LEN ))
-        frame = 0;
-        
-      display.drawBitmap((SCREEN_WIDTH - width)/2,0,ArrowDownallArray[frame],13,64,SH110X_WHITE);
-      display.display();
-      display.clearDisplay();
-      frame++;
+      myStepper.step(-steps);
     }
   }
-  
-  
-  display.setTextSize(1);
 }
 
 //------------------------------------------------------------------------------
